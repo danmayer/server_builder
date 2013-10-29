@@ -22,6 +22,12 @@ Or install it yourself as:
 
 TODO: Write usage instructions here
 
+## Links
+
+* [vagrants as digital ocean provider](https://www.digitalocean.com/community/articles/how-to-use-digitalocean-as-your-provider-in-vagrant-on-an-ubuntu-12-10)
+* [assigning ports with Docker](http://stackoverflow.com/questions/18497564/assigning-vhosts-to-docker-ports)
+* [how to scale docker in production](http://stackoverflow.com/questions/18285212/how-to-scale-docker-containers-in-production)
+
 ## Contributing
 
 1. Fork it
