@@ -1,5 +1,6 @@
 require 'rubygems'
-require "server_builder/version"
+require 'server_builder/version'
+require 'logger'
 
 module ServerBuilder
   class Builder
@@ -21,9 +22,19 @@ module ServerBuilder
         puts "verifying server"
         verify_server(opts)
       else
-        puts "build a server"
+        builder = Builder.new
+        builder.build_server
       end
       puts "done"
+    end
+
+    def initialize(opts = {})
+      @host = opts.fetch(:host){ "utils.picoappz.com" }
+      @logger = opts.fetch(:host){ Logger.new("logs/server_builder.log") }
+    end
+    
+    def build_server
+      logger.info "build a server"
     end
 
     def self.verify_server(opts = {})
@@ -33,6 +44,10 @@ module ServerBuilder
       verify_logstash(host) if opts['logstash']
       verify_elasticsearch(host) if opts['elasticsearch']
       verify_redis(host) if opts['redis']
+    end
+
+    def logger
+      @logger
     end
 
     private
