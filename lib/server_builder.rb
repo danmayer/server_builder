@@ -1,10 +1,15 @@
-require 'rubygems'
-require 'server_builder/version'
 require 'logger'
+
+require 'server_builder/version'
+require 'server_builder/multi_io'
+require 'server_builder/fog_builder'
+require 'server_builder/verifier'
 
 module ServerBuilder
   class Builder
     
+    attr_accessor :logger
+
     def self.run(opts)
       puts "server builder run with #{opts.inspect}"
       if opts.is_a?(Array)
@@ -18,103 +23,60 @@ module ServerBuilder
         end
       end
       puts "server builder converted opts #{opts.inspect}"
-      if opts['cmd'].match(/verify/i)
-        puts "verifying server"
-        verify_server(opts)
+      case opts['cmd']
+      when 'verify'
+        builder = Builder.new(opts)
+        builder.verify_server(opts)
+      when 'ssh'
+        builder = Builder.new(opts)
+        builder.ssh(opts)
+      when 'redis'
+        builder = Builder.new(opts)
+        builder.redis_server(opts)
+      when 'build'
+        builder = Builder.new(opts)
+        builder.build_server(opts)
       else
-        builder = Builder.new
-        builder.build_server
+        puts "invalid builder command, run like: server_builder build"
       end
-      puts "done"
     end
 
     def initialize(opts = {})
-      @host = opts.fetch(:host){ "utils.picoappz.com" }
-      @logger = opts.fetch(:host){ Logger.new("logs/server_builder.log") }
-    end
-    
-    def build_server
-      logger.info "build a server"
-    end
-
-    def self.verify_server(opts = {})
-      host = opts.fetch(:host){ "utils.picoappz.com" }
-      verify_graphite(host) if opts['graphite']
-      verify_statsd(host) if opts['statsd']
-      verify_logstash(host) if opts['logstash']
-      verify_elasticsearch(host) if opts['elasticsearch']
-      verify_redis(host) if opts['redis']
+      @host = opts.fetch('host'){ "utils.picoappz.com" }
+      @logger = opts.fetch('logger'){ 
+        log_file = File.open("logs/server_builder.log", "a")
+        Logger.new MultiIO.new(STDOUT, log_file)
+      }
     end
 
-    def logger
-      @logger
+    def redis_server(opts = {})
+      ssh(:execute => 'docker run -d -p 6379:6379 dockerfile/redis')
     end
 
-    private
-
-    def self.verify_graphite(host, port = 2003)
-      puts "verifying graphite"
-      require 'simple-graphite'
-      g = Graphite.new({:host => host, :port => port})
-      
-      g.push_to_graphite do |graphite|
-        graphite.puts "server_builder.test.graphite 3.1415926 #{g.time_now}"
+    def ssh(opts = {})
+      # use vagrant ssh to recent vagrant built server
+      if opts[:execute]
+        logger.info "connecting to server to run: #{opts[:execute]}"
+        Kernel.exec("cd config/docker_vagrant && vagrant ssh --command '#{opts[:execute]}'")
+      else
+        logger.info "connecting to server..."
+        Kernel.exec("cd config/docker_vagrant && vagrant ssh")
       end
     end
-
-    def self.verify_statsd(host, port = 8125)
-      puts "verifying statsd"
-      require 'statsd-ruby'
-
-      statsd = Statsd.new(host, port).tap{|sd| sd.namespace = 'server_builder'}
-      100.times {
-        statsd.increment 'test.statsd'
-      }
-    end
-
-    def self.verify_logstash(host, port = 49175)
-      puts "verifying logstash"
-      require 'logstash-logger'
-      
-      # Defaults to UDP
-      logger = LogStashLogger.new(host, port, :tcp)
-      logger.info 'server_builder test logstash logging'
-    end
-
-    def self.verify_redis(host, port = 6380)
-      puts "verifying redis"
-      require "redis"
     
-      redis = Redis.new(:host => host, :port => port)  
-      redis.set("server_builder_test", "setting redis")
+    def build_server(opts = {})
+      logger.info "building a base docker server..."
+      # use vagrant to install docker on EC2 with offical docker vagrant script
+      logger.info `cd config/docker_vagrant && vagrant up --provider=aws`
+      
+      # use fog and bootstrap
+      # fog_builder = FogBuilder.new(opts, logger)
+      # fog_builder.build
     end
 
-    def self.verify_elasticsearch(host, port = 9200)
-      puts "verifying elasticsearch"
-      require 'elasticsearch'
-
-      # Connect to cluster at search1:9200, sniff nodes and round-robin between them
-      es = Elasticsearch::Client.new hosts: ["#{host}search1:#{port}"], reload_connections: true
-
-      # Index a document:
-      es.index index: 'server_builder',
-      type:  'test_post',
-      id: 1,
-      body: {
-        title:   "Elasticsearch clients",
-        content: "Interesting content...",
-        date:    "2013-09-24"
-      }
-      
-      # Get the document:
-      doc = es.get index: 'server_builder', type: 'test_post', id: 1
-      puts doc
-      
-      # Search:
-      doc = es.search index: 'server_builder',
-      body: { query: { match: { title: 'elasticsearch' } } }
-      
-      puts doc
+    def verify_server(opts = {})
+      verifier = Verifier.new(opts, logger)
+      verifier.verify
     end
 
   end

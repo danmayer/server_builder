@@ -1,0 +1,11 @@
+Vagrant.configure("2") do |config|
+  config.vm.box = "quantal64"
+  # The url from where the 'config.vm.box' box will be fetched if it
+  # doesn't already exist on the user's system.
+  config.vm.box_url = "https://github.com/downloads/roderik/VagrantQuantal64Box/quantal64.box"
+
+  config.vm.provision :ventriloquist do |env|
+    env.services  << %w( redis pg:9.1 mailcatcher )
+    env.platforms << %w( nodejs ruby:1.9.3 )
+  end
+end
