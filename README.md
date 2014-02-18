@@ -1,6 +1,9 @@
 # ServerBuilder
+===
 
-TODO: Write a gem description
+After working on building servers with a verity of techniques. I decided that really many of the various options aren't better than one another but what is really important is scriptability, repeatability, verifications, and recorded process.
+
+This project aims to add a nice command like interface in front of various scripts. To provide a consistent interface even if varying technologies are used. Also, to make the interactions simple and user friendly.
 
 ## Installation
 
@@ -18,9 +21,39 @@ Or install it yourself as:
     
     bin/server_builder verify statsd=true graphite=true logstash=true elasticsearch=true
 
+### Expected environment variables and configuration
+
+notes move all the env out of profile etc and into a .gitignore dotenv file and make recommendations on how to setup for user installed machines.
+
 ## Usage
 
-TODO: Write usage instructions here
+To get help
+
+	server_builder help
+
+To build a blank server run
+
+	server_builder build # =>
+
+To build a server with services and verify the services are functioning run
+
+	server_builder build redis docker_registry elastic_search verify
+	
+To add services to an existing service run
+
+	server_builder redid docker_registry host=hostname.whatever.com
+	
+To create verify services on a server run
+
+	server_builder verify host=hostname.whatever.com
+	
+To connect to a server over ssh run
+
+	server_builder ssh host=hostname.whatever.com
+
+To execute a command on a remote server run
+
+	server_builder ssh host=hostname.whatever.com execute='docker run -d -p 3306:3306 orchardup/mysql'
 
 ## Links
 

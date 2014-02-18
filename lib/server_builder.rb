@@ -33,6 +33,9 @@ module ServerBuilder
       when 'redis'
         builder = Builder.new(opts)
         builder.redis_server(opts)
+      when 'docker_registry'
+        builder = Builder.new(opts)
+        builder.docker_registry_server(opts)
       when 'build'
         builder = Builder.new(opts)
         builder.build_server(opts)
@@ -51,6 +54,10 @@ module ServerBuilder
 
     def redis_server(opts = {})
       ssh(:execute => 'docker run -d -p 6379:6379 dockerfile/redis')
+    end
+
+    def docker_registry_server(opts = {})
+      ssh(:execute => 'docker run -d -p 5000:5000 samalba/docker-registry')
     end
 
     def ssh(opts = {})
