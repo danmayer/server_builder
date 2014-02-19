@@ -27,6 +27,12 @@ notes move all the env out of profile etc and into a .gitignore dotenv file and 
 
 ## Usage
 
+What should it look like to build 
+
+* against local docker?
+* local vagrant
+* ec2, digital ocean, random sshable box
+
 To get help
 
 	server_builder help

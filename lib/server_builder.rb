@@ -36,6 +36,9 @@ module ServerBuilder
       when 'docker_registry'
         builder = Builder.new(opts)
         builder.docker_registry_server(opts)
+      when 'jenkins'
+        builder = Builder.new(opts)
+        builder.jenkins_server(opts)
       when 'build'
         builder = Builder.new(opts)
         builder.build_server(opts)
@@ -54,6 +57,10 @@ module ServerBuilder
 
     def redis_server(opts = {})
       ssh(:execute => 'docker run -d -p 6379:6379 dockerfile/redis')
+    end
+
+    def jenkins_server(opts = {})
+      ssh(:execute => 'docker run -p 8080:8080 -d bacongobbler/jenkins')
     end
 
     def docker_registry_server(opts = {})
