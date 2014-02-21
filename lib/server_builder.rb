@@ -42,6 +42,9 @@ module ServerBuilder
       when 'build'
         builder = Builder.new(opts)
         builder.build_server(opts)
+      when 'stop'
+        builder = Builder.new(opts)
+        builder.stop_server(opts)
       else
         puts "invalid builder command, run like: server_builder build"
       end
@@ -111,6 +114,12 @@ module ServerBuilder
         logger.info "connecting to server..."
         Kernel.exec("cd config/docker_vagrant && vagrant ssh")
       end
+    end
+
+    def stop_server(opts = {})
+      logger.info "building a base docker server..."
+      # use vagrant to install docker on EC2 with offical docker vagrant script
+      logger.info `cd config/docker_vagrant && vagrant halt`
     end
     
     def build_server(opts = {})
