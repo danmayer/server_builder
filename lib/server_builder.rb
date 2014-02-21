@@ -60,7 +60,42 @@ module ServerBuilder
     end
 
     def jenkins_server(opts = {})
-      ssh(:execute => 'docker run -p 8080:8080 -d bacongobbler/jenkins')
+      # could keep this around, but docker jenkins doesn't support dockerized builds
+      # ssh(:execute => 'docker run -p 8080:8080 -d bacongobbler/jenkins')
+      # cmd = <<-eos
+      # apt-get update &&
+      # apt-get -y install wget git &&
+      # apt-get -q -y openjdk-7-jre-headless && apt-get clean &&
+      # echo "deb http://pkg.jenkins-ci.org/debian binary/" > /etc/apt/sources.list.d/jenkins.list &&
+      # wget -q -O - http://pkg.jenkins-ci.org/debian/jenkins-ci.org.key | apt-key add - &&
+      # apt-get update &&
+      # DEBIAN_FRONTEND=noninteractive apt-get install -y jenkins &&
+      # eos
+      # ssh(:execute => cmd)
+      
+      cmds = [
+              "wget -q -O - http://pkg.jenkins-ci.org/debian/jenkins-ci.org.key | sudo apt-key add -",
+              "sudo sh -c 'echo deb http://pkg.jenkins-ci.org/debian binary/ >   /etc/apt/sources.list.d/jenkins.list'",	
+              "sudo apt-get update -y",
+"sudo DEBIAN_FRONTEND=noninteractive apt-get -y  install jenkins",
+              "sudo mkdir /home/jenkins/",
+              "sudo chmod +xr /home/jenkins/",
+              "sudo usermod -a -G docker jenkins",
+              "sudo wget -q -O - http://mirrors.jenkins-ci.org/war-stable/latest/jenkins.war > /tmp/jenkins.war",
+              "sudo cp /tmp/jenkins.war /home/jenkins/",
+              "sudo curl https://ci.jenkins-ci.org/jnlpJars/jenkins-cli.jar > /tmp/jenkins-cli.jar",
+              "sudo cp /tmp/jenkins-cli.jar /home/jenkins/",
+"sudo chown jenkins:docker /home/jenkins/jenkins.war",
+              "sudo chown jenkins:docker /home/jenkins/jenkins-cli.jar",
+              "curl  -L http://mirror.xmission.com/jenkins/updates/update-center.json | sed '1d;$d' | curl -X POST -H 'Accept: application/json' -d @-  http://127.0.0.1:8080/updateCenter/byId/default/postBack",
+              "sudo -Hu jenkins java -jar /home/jenkins/jenkins-cli.jar -s http://127.0.0.1:8080/ safe-restart",
+              "sleep 35",
+              "sudo -Hu jenkins java -jar /home/jenkins/jenkins-cli.jar -s http://127.0.0.1:8080/ install-plugin Git; true",
+              "sudo -Hu jenkins java -jar /home/jenkins/jenkins-cli.jar -s http://127.0.0.1:8080/ safe-restart; true"
+             ]
+      cmds.each do |cmd|
+        logger.info ssh(:execute => cmd)
+      end
     end
 
     def docker_registry_server(opts = {})
@@ -71,7 +106,7 @@ module ServerBuilder
       # use vagrant ssh to recent vagrant built server
       if opts[:execute]
         logger.info "connecting to server to run: #{opts[:execute]}"
-        Kernel.exec("cd config/docker_vagrant && vagrant ssh --command '#{opts[:execute]}'")
+        `cd config/docker_vagrant && vagrant ssh --command '#{opts[:execute]}'`
       else
         logger.info "connecting to server..."
         Kernel.exec("cd config/docker_vagrant && vagrant ssh")

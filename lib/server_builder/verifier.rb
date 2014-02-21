@@ -20,6 +20,14 @@ module ServerBuilder
 
     protected
     
+    def verify_jenkins(port)
+      port = port.to_i
+      port = 8080 if port==0
+      logger.info "verifying jenkins"
+      output = `curl #{host}:#{port}`
+      output.match(/jenkins/)
+    end
+
     def verify_graphite(port)
       port = port.to_i
       port = 2003 if port==0
