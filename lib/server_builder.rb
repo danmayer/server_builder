@@ -39,6 +39,12 @@ module ServerBuilder
       when 'jenkins'
         builder = Builder.new(opts)
         builder.jenkins_server(opts)
+      when 'app'
+        builder = Builder.new(opts)
+        builder.app_on_server(opts)
+      when 'basics'
+        builder = Builder.new(opts)
+        builder.basics_on_server(opts)
       when 'build'
         builder = Builder.new(opts)
         builder.build_server(opts)
@@ -62,19 +68,33 @@ module ServerBuilder
       ssh(:execute => 'docker run -d -p 6379:6379 dockerfile/redis')
     end
 
+    def basics_on_server(opts = {})
+      logger.info ssh(:execute => "sudo apt-get -y update")
+      logger.info ssh(:execute => "sudo apt-get install -y git emacs wget curl ")
+    end
+
+    def install_docker_to_registry(opts = {})
+      
+      logger.info ssh(:execute => "mkdir -p /home/ubuntu/apps")
+    end
+
+    # depends on docker registry
+    # depends on basics_on_server
+    def app_on_server(opts = {})
+      repo_url  = opts['repo_url']
+      raise "use public accessiable git like https not git@ which asks for auth" if repo_url.match(/git@/)
+      repo_name = repo_url.split('/').last.gsub('.git','')
+      app_dir   = "/home/ubuntu/apps/#{repo_name}"
+      logger.info ssh(:execute => "mkdir -p /home/ubuntu/apps")
+      logger.info ssh(:execute => "mkdir -p /home/ubuntu/apps")
+      logger.info ssh(:execute => "git clone #{repo_url} #{app_dir}")
+      logger.info ssh(:execute => "cd #{app_dir} && docker build -t #{repo_name} .")
+      logger.info ssh(:execute => "docker run -d #{repo_name}")
+    end
+
     def jenkins_server(opts = {})
       # could keep this around, but docker jenkins doesn't support dockerized builds
       # ssh(:execute => 'docker run -p 8080:8080 -d bacongobbler/jenkins')
-      # cmd = <<-eos
-      # apt-get update &&
-      # apt-get -y install wget git &&
-      # apt-get -q -y openjdk-7-jre-headless && apt-get clean &&
-      # echo "deb http://pkg.jenkins-ci.org/debian binary/" > /etc/apt/sources.list.d/jenkins.list &&
-      # wget -q -O - http://pkg.jenkins-ci.org/debian/jenkins-ci.org.key | apt-key add - &&
-      # apt-get update &&
-      # DEBIAN_FRONTEND=noninteractive apt-get install -y jenkins &&
-      # eos
-      # ssh(:execute => cmd)
       
       cmds = [
               "wget -q -O - http://pkg.jenkins-ci.org/debian/jenkins-ci.org.key | sudo apt-key add -",
