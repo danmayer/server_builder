@@ -82,14 +82,16 @@ module ServerBuilder
     # depends on basics_on_server
     def app_on_server(opts = {})
       repo_url  = opts['repo_url']
+      port      = opts['port']
+      raise "port is a required option to start an app" if port.nil?
+      raise "`server_builder app repo_url=some_git_repo.git` is required to install an app." if repo_url.nil?
       raise "use public accessiable git like https not git@ which asks for auth" if repo_url.match(/git@/)
       repo_name = repo_url.split('/').last.gsub('.git','')
       app_dir   = "/home/ubuntu/apps/#{repo_name}"
       logger.info ssh(:execute => "mkdir -p /home/ubuntu/apps")
-      logger.info ssh(:execute => "mkdir -p /home/ubuntu/apps")
       logger.info ssh(:execute => "git clone #{repo_url} #{app_dir}")
       logger.info ssh(:execute => "cd #{app_dir} && docker build -t #{repo_name} .")
-      logger.info ssh(:execute => "docker run -d #{repo_name}")
+      logger.info ssh(:execute => "docker run -d -p #{port}:#{port} #{repo_name}")
     end
 
     def jenkins_server(opts = {})
