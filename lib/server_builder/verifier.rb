@@ -80,6 +80,7 @@ module ServerBuilder
       end
     end
 
+    # ./bin/server_builder verify host=elastic-search.myhost.com elasticsearch=80
     def verify_elasticsearch(port)
       port = port.to_i
       port = 9200 if port==0

@@ -33,12 +33,18 @@ module ServerBuilder
       when 'redis'
         builder = Builder.new(opts)
         builder.redis_server(opts)
+      when 'elastic_search'
+        builder = Builder.new(opts)
+        builder.elastic_search_server(opts)
       when 'docker_registry'
         builder = Builder.new(opts)
         builder.docker_registry_server(opts)
       when 'jenkins'
         builder = Builder.new(opts)
         builder.jenkins_server(opts)
+      when 'yeoman_example'
+        builder = Builder.new(opts)
+        builder.yoeman_example_server(opts)
       when 'app'
         builder = Builder.new(opts)
         builder.app_on_server(opts)
@@ -51,6 +57,9 @@ module ServerBuilder
       when 'stop'
         builder = Builder.new(opts)
         builder.stop_server(opts)
+      when 'destroy'
+        builder = Builder.new(opts)
+        builder.destroy_server(opts)
       else
         puts "invalid builder command, run like: server_builder build"
       end
@@ -64,6 +73,10 @@ module ServerBuilder
       }
     end
 
+    def elastic_search_server(opts = {})
+      ssh(:execute => 'docker run -d -p 9200:9200 -p 9300:9300 dockerfile/elasticsearch')
+    end
+
     def redis_server(opts = {})
       ssh(:execute => 'docker run -d -p 6379:6379 dockerfile/redis')
     end
@@ -74,7 +87,6 @@ module ServerBuilder
     end
 
     def install_docker_to_registry(opts = {})
-      
       logger.info ssh(:execute => "mkdir -p /home/ubuntu/apps")
     end
 
@@ -92,6 +104,25 @@ module ServerBuilder
       logger.info ssh(:execute => "git clone #{repo_url} #{app_dir}")
       logger.info ssh(:execute => "cd #{app_dir} && docker build -t #{repo_name} .")
       logger.info ssh(:execute => "docker run -d -p #{port}:#{port} #{repo_name}")
+    end
+
+    def yoeman_example_server(opts = {})
+      # server to run
+      # http://yeoman.io/codelab.html
+      # Something is wrong if I use this yoeman and install generators they don't appear
+      # need to try again and perhaps try this http://stackoverflow.com/questions/18081125/why-are-my-yeoman-generators-installing-in-the-wrong-place
+      cmds = [
+              "sudo apt-get update -y",
+              "sudo apt-get install -y python-software-properties python g++ make",
+              "sudo add-apt-repository -y ppa:chris-lea/node.js",
+              "sudo apt-get update -y ",
+              "sudo apt-get install -y nodejs",
+              "sudo npm install --global yo",
+              "sudo npm install -y --global yo"
+             ]
+      cmds.each do |cmd|
+        logger.info ssh(:execute => cmd)
+      end
     end
 
     def jenkins_server(opts = {})
@@ -128,6 +159,8 @@ module ServerBuilder
     end
 
     def ssh(opts = {})
+      #  opposed to using vagrant ssh probably faster to do directly
+      # ssh -i ~/.ssh/dans.pem ubuntu@ec2-54-225-37-243.compute-1.amazonaws.com
       # use vagrant ssh to recent vagrant built server
       if opts[:execute]
         logger.info "connecting to server to run: #{opts[:execute]}"
@@ -142,6 +175,12 @@ module ServerBuilder
       logger.info "building a base docker server..."
       # use vagrant to install docker on EC2 with offical docker vagrant script
       logger.info `cd config/docker_vagrant && vagrant halt`
+    end
+
+    def destroy_server(opts = {})
+      logger.info "destroying server..."
+      # use vagrant to install docker on EC2 with offical docker vagrant script
+      logger.info `cd config/docker_vagrant && vagrant destroy -f`
     end
     
     def build_server(opts = {})
