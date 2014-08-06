@@ -36,6 +36,9 @@ module ServerBuilder
       when 'elastic_search'
         builder = Builder.new(opts)
         builder.elastic_search_server(opts)
+      when 'open_street_map'
+        builder = Builder.new(opts)
+        builder.open_street_map_server(opts)
       when 'docker_registry'
         builder = Builder.new(opts)
         builder.docker_registry_server(opts)
@@ -79,6 +82,10 @@ module ServerBuilder
 
     def redis_server(opts = {})
       ssh(:execute => 'docker run -d -p 6379:6379 dockerfile/redis')
+    end
+
+    def open_street_map_server(opts = {})
+      ssh(:execute => 'docker run -d  -p 80:8888 -p 5432:5588 homme/openstreetmap-tiles')
     end
 
     def basics_on_server(opts = {})
