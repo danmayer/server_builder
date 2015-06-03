@@ -34,21 +34,28 @@ module ServerBuilder
       logger.info "verifying graphite"
       require 'simple-graphite'
       g = Graphite.new({:host => host, :port => port})
-      
-      g.push_to_graphite do |graphite|
-        graphite.puts "server_builder.test.graphite 3.1415926 #{g.time_now}"
-      end
+
+      10.times {
+        g.push_to_graphite do |graphite|
+          graphite.puts "server_builder.test.graphite 3.1415926 #{g.time_now}"
+        end
+        sleep(0.01)
+      }
     end
-    
+
+    # https://gist.github.com/amoslanka/6245043
     def verify_statsd(port)
       port = port.to_i
       port = 8125 if port==0
       logger.info "verifying statsd"
       require 'statsd-ruby'
-      
       statsd = Statsd.new(host, port).tap{|sd| sd.namespace = 'server_builder'}
-      100.times {
+
+      require 'pry-byebug'; debugger
+      
+      20.times {
         statsd.increment 'test.statsd'
+        sleep(0.01)
       }
     end
     

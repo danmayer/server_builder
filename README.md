@@ -51,7 +51,20 @@ To add services to an existing service run
 	
 To create verify services on a server run
 
+    #verify all services
 	server_builder verify host=hostname.whatever.com
+	
+	#or a specific service on default port
+	./bin/server_builder verify graphite=true host=devdocker.mayerdan.com
+	
+	#or a specific service on a specific port
+	./bin/server_builder verify graphite=32770 host=devdocker.mayerdan.com
+	
+	#or verify multiple services
+	./bin/server_builder verify graphite=32770 statsd=32768 host=devdocker.mayerdan.com
+	
+	#create ECS cluster
+	./bin/server_builder cluster name='graphite-statsd'
 	
 To connect to a server over ssh run
 

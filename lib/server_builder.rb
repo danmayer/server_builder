@@ -3,6 +3,7 @@ require 'logger'
 require 'server_builder/version'
 require 'server_builder/multi_io'
 require 'server_builder/fog_builder'
+require 'server_builder/ecs_builder'
 require 'server_builder/verifier'
 
 module ServerBuilder
@@ -24,6 +25,9 @@ module ServerBuilder
       end
       puts "server builder converted opts #{opts.inspect}"
       case opts['cmd']
+      when 'cluster'
+        builder = ServerBuilder::EcsBuilder.new(opts)
+        builder.build(opts)
       when 'verify'
         builder = Builder.new(opts)
         builder.verify_server(opts)
